@@ -1,0 +1,161 @@
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Widget Météo & Heure Paris</title>
+<style>
+  body {
+    margin: 0;
+    background: transparent;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    color: #fff;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  }
+  .widget-container {
+    font-size: 1rem;
+    max-width: 600px;
+    width: 90vw;
+    background-color: transparent;
+  }
+  .widget-container.grand {
+    font-size: 2rem;
+  }
+  #widget-meteo-heure-paris {
+    background-color: transparent;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    user-select: none;
+  }
+  #widget-meteo-heure-paris .clock {
+    font-size: 4em;
+    font-weight: 700;
+    line-height: 1;
+  }
+  #widget-meteo-heure-paris .date {
+    margin-top: 0.3em;
+    font-size: 1.3em;
+  }
+  #widget-meteo-heure-paris .weather {
+    margin-top: 0.8em;
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    font-size: 1.1em;
+  }
+  #widget-meteo-heure-paris .weather-icon {
+    width: 2.5em;
+    height: 2.5em;
+  }
+</style>
+</head>
+<body>
+  <div class="widget-container" id="mon-widget">
+    <div id="widget-meteo-heure-paris">
+      <div class="clock" id="wh-clock"></div>
+      <div class="date" id="wh-date"></div>
+      <div class="weather" id="wh-weather">
+        <img class="weather-icon" id="wh-weather-icon" src="" alt="" />
+        <span id="wh-weather-desc"></span>
+      </div>
+    </div>
+  </div>
+
+<script>
+  (function() {
+    function updateClock() {
+      const now = new Date();
+      const options = {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+        timeZone: 'Europe/Paris'
+      };
+      document.getElementById('wh-clock').textContent = now.toLocaleTimeString('fr-FR', options);
+
+      const dateOptions = {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        timeZone: 'Europe/Paris'
+      };
+      document.getElementById('wh-date').textContent = now.toLocaleDateString('fr-FR', dateOptions);
+    }
+
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    async function fetchWeather() {
+      const lat = 48.8566;
+      const lon = 2.3522;
+      const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&timezone=Europe%2FParis`;
+
+      try {
+        const response = await fetch(url);
+        const data = await response.json();
+        const weather = data.current_weather;
+        const temp = Math.round(weather.temperature);
+        const code = weather.weathercode;
+
+        const descMap = {
+          0: 'Clair',
+          1: 'Principalement clair',
+          2: 'Partiellement nuageux',
+          3: 'Couvert',
+          45: 'Brouillard',
+          48: 'Brouillard givrant',
+          51: 'Bruine légère',
+          53: 'Bruine modérée',
+          55: 'Bruine dense',
+          61: 'Pluie faible',
+          63: 'Pluie modérée',
+          65: 'Pluie forte',
+          71: 'Neige faible',
+          73: 'Neige modérée',
+          75: 'Neige forte',
+          95: 'Orage',
+          96: 'Orage avec grêle'
+        };
+
+        const iconMap = {
+          0: '☀️',
+          1: '🌤️',
+          2: '⛅',
+          3: '☁️',
+          45: '🌫️',
+          48: '🌫️',
+          51: '🌦️',
+          53: '🌦️',
+          55: '🌦️',
+          61: '🌧️',
+          63: '🌧️',
+          65: '🌧️',
+          71: '🌨️',
+          73: '🌨️',
+          75: '🌨️',
+          95: '⛈️',
+          96: '⛈️'
+        };
+
+        const svgIcon = `<svg xmlns='http://www.w3.org/2000/svg' width='40' height='40'><text x='0' y='30' font-size='30'>${iconMap[code] || '❓'}</text></svg>`;
+        document.getElementById('wh-weather-icon').src = `data:image/svg+xml;base64,${btoa(svgIcon)}`;
+        document.getElementById('wh-weather-icon').alt = descMap[code] || 'Inconnu';
+        document.getElementById('wh-weather-desc').textContent = `${temp}°C, ${descMap[code] || 'Inconnu'}`;
+      } catch(e) {
+        document.getElementById('wh-weather-desc').textContent = 'Météo non dispo';
+        document.getElementById('wh-weather-icon').alt = '';
+        document.getElementById('wh-weather-icon').src = '';
+      }
+    }
+
+    fetchWeather();
+  })();
+</script>
+</body>
+</html>
